@@ -14,7 +14,6 @@ lastSleep = 0
 sleepLength = 0  
 screen_width, screen_height = 1920, 1080  
 lastDirection = "right" # Direction blahaj was facing
-frames = []
 
 # Window config
 window = tk.Tk()
@@ -69,10 +68,11 @@ swim_left = loadGif(gifPath + 'swim_left.gif')
 
 currIdle = idle_gifs["idle_right"]
 frameIndex = 0  # Frame counter
+frames = []
 
 # Updates the animation and position of the pet
 def behavior():
-    global state, x, y, lastSleep, sleepLength, currIdle, lastDirection, frameIndex, currIdle
+    global state, x, y, lastSleep, sleepLength, currIdle, lastDirection, frameIndex, currIdle, frames
     
     # currGifs based on the current state
     if state == 0:  # Idle
@@ -87,6 +87,7 @@ def behavior():
 
     elif state == 2:  # Sleeping
         frames = sleeping
+        state = 2
 
     elif state == 3:  # Waking up
         frames = to_awake
@@ -94,40 +95,37 @@ def behavior():
     elif state == 4:  # Swimming left
         lastDirection = "left"
         frames = swim_left
-        x = max(x - 10, 200)
+        x = max(x - 10, 100)
         y = min(max(y + random.choice([-10, 10]), 200), screen_height - 200) 
         # Go in other direction if out of bounds
-        if x <= 200:
-            x += 20
-            state = 5
-            pass
         if y >= screen_height - 200:
             y -= 20
         elif y <= 200:
             y += 20
-        state = 0
-        
+        if x <= 200:
+            x += 20
+            state = 5        
         
     elif state == 5:  # Swimming right
         lastDirection = "right"
         frames = swim_right
-        x = min(x + 10, screen_width - 300) 
+        x = min(x + 10, screen_width - 100) 
         y = min(max(y + random.choice([-10, 10]), 200), screen_height - 200) 
-        # Go in other direction if out of bounds
-        if x >= screen_width - 200:
-            x -= 20
-            state = 4
-            pass
         if y >= screen_height - 200:
             y -= 20
         elif y <= 200:
             y += 20
-        state = 0
-
+        # Go in other direction if out of bounds
+        if x >= screen_width - 200:
+            x -= 20
+            state = 4
+        
     # Cycle through frames and update window
-    frameIndex = (frameIndex + 1) % len(frames)
-    label.configure(image=frames[frameIndex])
-    label.image = frames[frameIndex]
+    if frames:
+        frameIndex = (frameIndex + 1) % len(frames)
+        label.configure(image=frames[frameIndex])
+        label.image = frames[frameIndex]
+
     window.geometry(f'210x118+{x}+{y}')
     window.after(100, behavior) 
 
@@ -140,7 +138,7 @@ def event():
     # idle animations
     if eventNum <= 8: 
         if state == 0:
-            idle_choice = random.randint(1, 8)
+            idle_choice = random.randint(1, 16)
             if idle_choice == 1:
                 currIdle = idle_gifs["idle_plant"]
             elif idle_choice == 2:
