@@ -67,12 +67,12 @@ to_awake = loadGif(gifPath + 'to_awake.gif')
 swim_right = loadGif(gifPath + 'swim_right.gif')
 swim_left = loadGif(gifPath + 'swim_left.gif')
 
-curr_idle = idle_gifs["idle_right"]
+currIdle = idle_gifs["idle_right"]
 frameIndex = 0  # Frame counter
 
 # Updates the animation and position of the pet
 def behavior():
-    global state, x, y, lastSleep, sleepLength, currIdle, lastDirection, frameIndex
+    global state, x, y, lastSleep, sleepLength, currIdle, lastDirection, frameIndex, currIdle
     
     # currGifs based on the current state
     if state == 0:  # Idle
@@ -100,10 +100,12 @@ def behavior():
         if x <= 200:
             x += 20
             state = 5
+            pass
         if y >= screen_height - 200:
             y -= 20
         elif y <= 200:
             y += 20
+        state = 0
         
         
     elif state == 5:  # Swimming right
@@ -112,9 +114,10 @@ def behavior():
         x = min(x + 10, screen_width - 300) 
         y = min(max(y + random.choice([-10, 10]), 200), screen_height - 200) 
         # Go in other direction if out of bounds
-        if x >= screen_width - 300:
+        if x >= screen_width - 200:
             x -= 20
             state = 4
+            pass
         if y >= screen_height - 200:
             y -= 20
         elif y <= 200:
@@ -136,21 +139,27 @@ def event():
 
     # idle animations
     if eventNum <= 8: 
-        state = 0
-        idle_choice = random.randint(1, 8)
-        if idle_choice == 1:
-            currIdle = idle_gifs["idle_plant"]
-        elif idle_choice == 2:
-            currIdle = idle_gifs["idle_music"]
-        elif idle_choice == 3:
-            currIdle = idle_gifs["idle_candy"]
-        elif idle_choice == 4:
-            currIdle = idle_gifs["idle_fish"]
+        if state == 0:
+            idle_choice = random.randint(1, 8)
+            if idle_choice == 1:
+                currIdle = idle_gifs["idle_plant"]
+            elif idle_choice == 2:
+                currIdle = idle_gifs["idle_music"]
+            elif idle_choice == 3:
+                currIdle = idle_gifs["idle_candy"]
+            elif idle_choice == 4:
+                currIdle = idle_gifs["idle_fish"]
+            else:
+                if(lastDirection == "right"):
+                    currIdle = idle_gifs["idle_right"]
+                elif(lastDirection == "left"):
+                    currIdle = idle_gifs["idle_left"]
         else:
             if(lastDirection == "right"):
                 currIdle = idle_gifs["idle_right"]
             elif(lastDirection == "left"):
                 currIdle = idle_gifs["idle_left"]
+        state = 0
 
     # to sleep
     elif eventNum == 9 and (currentTime - lastSleep > 180) and state == 0: 
