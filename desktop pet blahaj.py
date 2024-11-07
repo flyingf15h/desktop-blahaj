@@ -14,6 +14,7 @@ lastSleep = 0
 sleepLength = 0  
 screen_width, screen_height = 1920, 1080  
 lastDirection = "right" # Direction blahaj was facing
+swimTime = 0 
 
 # Window config
 window = tk.Tk()
@@ -70,88 +71,100 @@ currIdle = idle_gifs["idle_right"]
 frameIndex = 0  # Frame counter
 frames = []
 
+# Choose idle animation
+def set_idle_animation():
+    global currIdle
+    idle_choice = random.randint(1, 6)
+    if idle_choice == 1:
+        currIdle = idle_gifs["idle_plant"]
+    elif idle_choice == 2:
+        currIdle = idle_gifs["idle_music"]
+    elif idle_choice == 3:
+        currIdle = idle_gifs["idle_candy"]
+    elif idle_choice == 4:
+        currIdle = idle_gifs["idle_fish"]
+    else:
+        if(lastDirection == "right"):
+            currIdle = idle_gifs["idle_right"]
+        elif(lastDirection == "left"):
+            currIdle = idle_gifs["idle_left"]
+    return currIdle 
+
 # Updates the animation and position of the pet
 def behavior():
-    global state, x, y, lastSleep, sleepLength, currIdle, lastDirection, frameIndex, currIdle, frames
+    global state, x, y, lastSleep, sleepLength, currIdle, lastDirection, frameIndex, currIdle, frames, swimTime, animationLocked
     
     # currGifs based on the current state
     if state == 0:  # Idle
-        frames = currIdle
+        frames = set_idle_animation()
+        y =  min(max(y + random.choice([-1, 1]), 200), screen_height - 200)
 
     elif state == 1:  # Idle to sleep
         frames = to_sleep
         lastSleep = time.time()
-        sleepLength = random.randint(20, 100) * 1000  # 20-100 seconds in ms
+        sleepLength = random.randint(20, 100) * 1000 
+        window.after(sleepLength, wakeUp) 
         state = 2
-        window.after(sleepLength, wakeUp)  # Schedule wake-up
 
     elif state == 2:  # Sleeping
         frames = sleeping
-        state = 2
 
     elif state == 3:  # Waking up
         frames = to_awake
 
     elif state == 4:  # Swimming left
+        if swimTime == 0:
+                swimTime = time.time(); 
         lastDirection = "left"
         frames = swim_left
         x = max(x - 10, 100)
-        y = min(max(y + random.choice([-10, 10]), 200), screen_height - 200) 
+        y = min(max(y + random.choice([-6, 6]), 200), screen_height - 210) 
         # Go in other direction if out of bounds
-        if y >= screen_height - 200:
+        if y >= screen_height - 210:
             y -= 20
-        elif y <= 200:
+        elif y <= 100:
             y += 20
-        if x <= 200:
+        if x <= 100:
             x += 20
-            state = 5        
+            state = 5    
+        if (time.time() - swimTime) <= 2:
+            state = 4    
         
     elif state == 5:  # Swimming right
+        if swimTime == 0:
+                swimTime = time.time();
         lastDirection = "right"
         frames = swim_right
-        x = min(x + 10, screen_width - 100) 
-        y = min(max(y + random.choice([-10, 10]), 200), screen_height - 200) 
-        if y >= screen_height - 200:
+        x = min(x + 10, screen_width - 210) 
+        y = min(max(y + random.choice([-6, 6]), 200), screen_height - 210) 
+        if y >= screen_height - 210:
             y -= 20
-        elif y <= 200:
+        elif y <= 100:
             y += 20
         # Go in other direction if out of bounds
-        if x >= screen_width - 200:
+        if x >= screen_width - 210:
             x -= 20
             state = 4
+        if (time.time() - swimTime) <= 2:
+            state = 5
         
     # Cycle through frames and update window
-    if frames:
-        frameIndex = (frameIndex + 1) % len(frames)
-        label.configure(image=frames[frameIndex])
-        label.image = frames[frameIndex]
+    frameIndex = (frameIndex + 1) % len(frames)
+    label.configure(image=frames[frameIndex])
+    label.image = frames[frameIndex]
 
     window.geometry(f'210x118+{x}+{y}')
-    window.after(100, behavior) 
+    window.after(80, behavior) 
 
 # Behavior transitions
 def event():
-    global state, lastSleep, currIdle
-    eventNum = random.randint(1, 14)
-    currentTime = time.time()
-
+    global state, lastSleep, currIdle, swimTime
+    eventNum = random.randint(1, 20)
+    
     # idle animations
-    if eventNum <= 8: 
-        if state == 0:
-            idle_choice = random.randint(1, 16)
-            if idle_choice == 1:
-                currIdle = idle_gifs["idle_plant"]
-            elif idle_choice == 2:
-                currIdle = idle_gifs["idle_music"]
-            elif idle_choice == 3:
-                currIdle = idle_gifs["idle_candy"]
-            elif idle_choice == 4:
-                currIdle = idle_gifs["idle_fish"]
-            else:
-                if(lastDirection == "right"):
-                    currIdle = idle_gifs["idle_right"]
-                elif(lastDirection == "left"):
-                    currIdle = idle_gifs["idle_left"]
+    if eventNum <= 15:
+        if state == 0: 
+            set_idle_animation()
         else:
             if(lastDirection == "right"):
                 currIdle = idle_gifs["idle_right"]
@@ -160,15 +173,17 @@ def event():
         state = 0
 
     # to sleep
-    elif eventNum == 9 and (currentTime - lastSleep > 180) and state == 0: 
+    elif eventNum == 16 and (time.time() - lastSleep > 180) and state == 0: 
         state = 1
 
     # swim right 
-    elif eventNum in [10, 11]:  
+    elif eventNum in [17, 18] and x <= (screen_width - 200): 
+        swimTime = 0 
         state = 5
 
     # swim left 
-    elif eventNum in [12, 13]: 
+    elif eventNum in [19, 20] and x >= 100: 
+        swimTime = 0
         state = 4
 
     # wake up
@@ -183,6 +198,6 @@ def wakeUp():
     state = 0
 
 # Start the main animation and event loops
-window.after(100, behavior)
+window.after(80, behavior)
 window.after(500, event)
 window.mainloop()
