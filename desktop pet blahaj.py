@@ -2,6 +2,7 @@ from ctypes import windll
 import random
 import tkinter as tk
 import time
+import math
 from PIL import Image, ImageTk
 
 print("blohai :3")
@@ -12,23 +13,23 @@ state = 1
 gifPath = 'C:\\Users\\bramb\\OneDrive\\Documents\\VSCode\\desktop pet blahaj\\gifs\\'
 lastSleep = 0 
 sleepLength = 0  
-screenWidth, screenHeight = 1920, 1080  
+screenWidth, screenHeight = 1520, 1080  
 lastDirection = "right" # Direction blahaj was facing
 swimTime = 0 
 animationLocked = False
+idlePhase = 0
 
 # Window config
 window = tk.Tk()
 window.config(highlightbackground='black')
 window.wm_attributes('-transparentcolor', 'black')
 window.title("Desktop Pet")
-window.geometry("210x118")  
-# Set window icon (doesn't do anything rn because overridedirect is on)
-icon = tk.PhotoImage(file = gifPath + 'petIcon.png')
-window.iconphoto(True, icon)
-# No toolbar on top of blahaj window but keep window on top
-window.overrideredirect(True)
-window.attributes('-topmost', True) 
+
+window.geometry(f"{screenWidth}x{screenHeight - 40}")
+window.overrideredirect(True)  # No toolbar
+window.attributes('-topmost', True)  # Keep on top
+window.config(bg='black')  # Background color set to a color that can be made transparent
+window.wm_attributes('-transparentcolor', 'black') 
 
 # Control backslash to close program
 def close_program(event=None):
@@ -36,8 +37,9 @@ def close_program(event=None):
     window.destroy()
 window.bind("<Control-q>", close_program)
 
+# Pet container in window
 label = tk.Label(window, bd=0, bg='black')
-label.pack()
+label.place(x=x, y=y)
 
 # Load and gifs
 def loadGif(file_path):
@@ -97,7 +99,7 @@ def setIdleAnim():
 
 # Updates the animation and position of the pet
 def behavior():
-    global state, x, y, lastSleep, sleepLength, currIdle, lastDirection, frameIndex, currIdle, frames, swimTime, animationLocked
+    global state, x, y, lastSleep, sleepLength, currIdle, lastDirection, frameIndex, currIdle, frames, swimTime, animationLocked, idlePhase
     
     if not animationLocked: 
         # currGifs based on the current state
@@ -113,7 +115,6 @@ def behavior():
 
         elif state == 2:  # Sleeping
             frames = sleeping
-            state = 2
 
         elif state == 3:  # Waking up
             frames = to_awake
@@ -130,25 +131,36 @@ def behavior():
     
     # Have movement during idle and swimming animations
     if state == 0:
-        y =  min(max(y + random.choice([-1, 1]), 200), screenHeight - 200)
+        if y <= 50:
+            y += 2
+        elif y >= (screenHeight - 118):
+            y -= 2
+        else:
+            y += math.sin(idlePhase) * 3
+            idlePhase += 1  
 
     elif frames == swim_left:
-        x = max(x - 10, 200)
-        y = min(max(y + random.choice([-6, 6]), 200), screenHeight - 210) 
+        x = max(x - 10, 10)
+        y = min(max(y + random.choice([-6, 6]), 10), screenHeight - 150) 
         if (time.time() - swimTime) <= 2:
             state = 4
     
     elif frames == swim_right:
-        x = min(x + 10, screenWidth - 210) 
-        y = min(max(y + random.choice([-6, 6]), 200), screenHeight - 300) 
+        x = min(x + 10, screenWidth - 250) 
+        y = min(max(y + random.choice([-6, 6]), 10), screenHeight - 150) 
         if (time.time() - swimTime) <= 2:
             state = 5
     
-    # Go in other direction if out of bounds
-    if y >= screenHeight - 210:
-        y -= 10
-    elif y <= 100:
-        y += 10
+    elif frames == sleeping:
+        if (time.time() - lastSleep) <= 10:
+            state = 2
+        if (time.time() - lastSleep) >= 100:
+            state = 3
+
+    x = max(0, min(x, screenWidth - 250))
+    y = max(0, min(y, screenHeight - 140))
+
+    label.place(x=x, y=int(y))
 
     # Play frames 
     frameIndex = (frameIndex + 1) % len(frames)
@@ -159,7 +171,6 @@ def behavior():
     if frameIndex == len(frames) - 1:
         animationLocked = False
     
-    window.geometry(f'210x118+{x}+{y}')
     window.after(80, behavior) 
 
 # Behavior transitions
@@ -172,22 +183,22 @@ def event():
         swimTime = 0
         state = 1
 
-    # swim right 
-    elif (eventNum in [14, 15, 16] and x <= (screenWidth - 210)) or x >= 150: 
-        if swimTime == 0:
-            swimTime = time.time()
-        lastDirection = "right" 
-        state = 5
-
     # swim left 
-    elif (eventNum in [17, 18, 19] and x >= 200) or x >= (screenWidth - 300): 
+    elif (eventNum in [10, 17, 18, 19] and x >= 200) or x >= (screenWidth - 300): 
         if swimTime == 0:
             swimTime = time.time()
         lastDirection = "left"
         state = 4
-
+        
+    # swim right 
+    elif (eventNum in [11, 14, 15, 16] and x <= (screenWidth - 210)) or x >= 150: 
+        if swimTime == 0:
+            swimTime = time.time()
+        lastDirection = "right" 
+        state = 5
+    
     # idle animations
-    if eventNum <= 11:
+    if eventNum <= 9:
         swimTime = 0
         if state == 0: 
             setIdleAnim()
