@@ -13,22 +13,20 @@ state = 1
 gifPath = 'C:\\Users\\bramb\\OneDrive\\Documents\\VSCode\\desktop pet blahaj\\gifs\\'
 lastSleep = 0 
 sleepLength = 0  
-screenWidth, screenHeight = 1520, 1080  
+screenWidth, screenHeight = 1520, 800  
 lastDirection = "right" # Direction blahaj was facing
 swimTime = 0 
 animationLocked = False
 idlePhase = 0
+lastIdle = "idle"
 
 # Window config
 window = tk.Tk()
-window.config(highlightbackground='black')
-window.wm_attributes('-transparentcolor', 'black')
 window.title("Desktop Pet")
-
-window.geometry(f"{screenWidth}x{screenHeight - 40}")
+window.geometry(f"{screenWidth}x{screenHeight}+0+0")
 window.overrideredirect(True)  # No toolbar
-window.attributes('-topmost', True)  # Keep on top
-window.config(bg='black')  # Background color set to a color that can be made transparent
+window.attributes('-topmost', True) 
+window.config(bg='black')
 window.wm_attributes('-transparentcolor', 'black') 
 
 # Control backslash to close program
@@ -76,20 +74,25 @@ frames = []
 
 # Choose idle animation
 def setIdleAnim():
-    global currIdle, lastDirection
+    global currIdle, lastDirection, lastIdle
     num = random.randint(1, 16)
-    if num == 11:
+    if num == 11 and lastIdle != "idle_plant":
         lastDirection = "right"
+        lastIdle = "idle_plant"
         currIdle = idles["idle_plant"]
-    elif num == 12:
+    elif num == 12 and lastIdle != "idle_music":
         lastDirection = "right"
+        lastIdle = "idle_music"
         currIdle = idles["idle_music"]
-    elif num == 13:
+    elif num == 13 and lastIdle != "idle_candy":
         lastDirection = "right"
+        lastIdle = "idle_candy"
         currIdle = idles["idle_candy"]
-    elif num == 14:
+    elif num == 14 and lastIdle != "idle_fish":
         lastDirection = "right"
+        lastIdle = "idle_fish"
         currIdle = idles["idle_fish"]
+
     else:
         if(lastDirection == "right"):
             currIdle = idles["idle_right"]
@@ -131,23 +134,23 @@ def behavior():
     
     # Have movement during idle and swimming animations
     if state == 0:
-        if y <= 50:
+        if y <= 10:
             y += 2
         elif y >= (screenHeight - 118):
             y -= 2
         else:
-            y += math.sin(idlePhase) * 3
+            y += math.sin(idlePhase) * 4
             idlePhase += 1  
 
     elif frames == swim_left:
         x = max(x - 10, 10)
-        y = min(max(y + random.choice([-6, 6]), 10), screenHeight - 150) 
+        y = min(max(y + random.choice([-6, 6]), 10), screenHeight - 110) 
         if (time.time() - swimTime) <= 2:
             state = 4
     
     elif frames == swim_right:
-        x = min(x + 10, screenWidth - 250) 
-        y = min(max(y + random.choice([-6, 6]), 10), screenHeight - 150) 
+        x = min(x + 10, screenWidth - 220) 
+        y = min(max(y + random.choice([-6, 6]), 10), screenHeight - 110) 
         if (time.time() - swimTime) <= 2:
             state = 5
     
@@ -157,8 +160,8 @@ def behavior():
         if (time.time() - lastSleep) >= 100:
             state = 3
 
-    x = max(0, min(x, screenWidth - 250))
-    y = max(0, min(y, screenHeight - 140))
+    x = max(0, min(x, screenWidth - 220))
+    y = max(0, min(y, screenHeight - 110))
 
     label.place(x=x, y=int(y))
 
@@ -184,7 +187,7 @@ def event():
         state = 1
 
     # swim left 
-    elif (eventNum in [10, 17, 18, 19] and x >= 200) or x >= (screenWidth - 300): 
+    elif (eventNum in [9, 10, 17, 18, 19] and x >= 200) or x >= (screenWidth - 350): 
         if swimTime == 0:
             swimTime = time.time()
         lastDirection = "left"
@@ -198,7 +201,7 @@ def event():
         state = 5
     
     # idle animations
-    if eventNum <= 9:
+    if eventNum <= 8:
         swimTime = 0
         if state == 0: 
             setIdleAnim()
