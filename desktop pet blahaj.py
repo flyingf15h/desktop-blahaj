@@ -19,6 +19,8 @@ swimTime = 0
 animationLocked = False
 idlePhase = 0
 lastIdle = "idle"
+dragX = dragY = 0
+isDragging = False 
 
 # Window config
 window = tk.Tk()
@@ -29,15 +31,39 @@ window.attributes('-topmost', True)
 window.config(bg='black')
 window.wm_attributes('-transparentcolor', 'black') 
 
+# Pet container in window
+label = tk.Label(window, bd=0, bg='black')
+label.place(x=x, y=y)
+
 # Control backslash to close program
 def close_program(event=None):
     print("Closing program")
     window.destroy()
 window.bind("<Control-q>", close_program)
 
-# Pet container in window
-label = tk.Label(window, bd=0, bg='black')
-label.place(x=x, y=y)
+# Drag pet with mouse
+def dragStart(event):
+    global dragX, dragY, isDragging
+    dragX = event.x
+    dragY = event.y
+    isDragging = True
+
+def drag(event):
+    global x, y
+    newX = label.winfo_x() + (event.x - dragX)
+    newY = label.winfo_y() + (event.y - dragY)
+    x = newX
+    y = newY
+    label.place(x=x, y=y)
+
+def dragEnd(event):
+    global isDragging
+    isDragging = False 
+
+label.bind("<Button-1>", dragStart)   
+label.bind("<B1-Motion>", drag)  
+label.bind("<ButtonRelease-1>", dragEnd)
+
 
 # Load and gifs
 def loadGif(file_path):
@@ -72,6 +98,7 @@ currIdle = idles["idle_right"]
 frameIndex = 0  # Frame counter
 frames = []
 
+
 # Choose idle animation
 def setIdleAnim():
     global currIdle, lastDirection, lastIdle
@@ -102,7 +129,7 @@ def setIdleAnim():
 
 # Updates the animation and position of the pet
 def behavior():
-    global state, x, y, lastSleep, sleepLength, currIdle, lastDirection, frameIndex, currIdle, frames, swimTime, animationLocked, idlePhase
+    global state, x, y, lastSleep, sleepLength, currIdle, lastDirection, frameIndex, currIdle, frames, swimTime, animationLocked, idlePhase, isDragging
     
     if not animationLocked: 
         # currGifs based on the current state
@@ -112,12 +139,14 @@ def behavior():
         elif state == 1:  # Idle to sleep
             frames = to_sleep
             lastSleep = time.time()
-            sleepLength = random.randint(20, 100) * 1000 
-            window.after(sleepLength, wakeUp) 
+            sleepLength = random.randint(10, 60) * 1000 
             state = 2
 
         elif state == 2:  # Sleeping
             frames = sleeping
+            if (time.time() - lastSleep) >= sleepLength / 1000:  
+                state = 3
+            else: state = 2
 
         elif state == 3:  # Waking up
             frames = to_awake
@@ -163,7 +192,8 @@ def behavior():
     x = max(0, min(x, screenWidth - 220))
     y = max(0, min(y, screenHeight - 110))
 
-    label.place(x=x, y=int(y))
+    if not isDragging:
+        label.place(x=x, y=int(y))
 
     # Play frames 
     frameIndex = (frameIndex + 1) % len(frames)
@@ -222,7 +252,7 @@ def event():
 # Return to idle after sleeping
 def wakeUp():
     global state
-    state = 0
+    state = 0    
 
 # Start the main animation and event loops
 window.after(80, behavior)
