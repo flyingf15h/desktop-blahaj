@@ -1,7 +1,7 @@
-Blahaj deskptop  pet that swims around on screen (mildly scuffed)
+Blahaj deskptop pet that swims around on screen (mildly scuffed) 
 
-pets = happy 
+idle, swim right, swim left, thinking about plants, music, candy, or fish, or sleeping
 
-gifs 210x118 
+click and drag with mouse to move pet
 
-everything is literally in one python file 
+gifs 210x118, screen 1520, 800
