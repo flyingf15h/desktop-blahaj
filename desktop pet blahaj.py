@@ -182,12 +182,6 @@ def behavior():
         y = min(max(y + random.choice([-6, 6]), 10), screenHeight - 110) 
         if (time.time() - swimTime) <= 2:
             state = 5
-    
-    elif frames == sleeping:
-        if (time.time() - lastSleep) <= 10:
-            state = 2
-        if (time.time() - lastSleep) >= 100:
-            state = 3
 
     x = max(0, min(x, screenWidth - 220))
     y = max(0, min(y, screenHeight - 110))
