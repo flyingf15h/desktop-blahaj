@@ -1,6 +1,6 @@
-blahaj deskptop pet that swims around on screen but scuffed since im a beginner
+blahaj deskptop pet that swims around on screen but scuffed since beginner 
 
-idle, swim right, swim left, thinking about plants, music, candy, or fish, or sleeping
+actions are idle, swim right, swim left, thinking about plants, music, candy, or fish, sleeping
 
 not sure whether to add the gifs to the repo 
 
