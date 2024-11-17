@@ -4,6 +4,7 @@ import tkinter as tk
 import time
 import math
 from PIL import Image, ImageTk
+from collections import deque
 
 print("blohai :3")
 
@@ -13,7 +14,7 @@ state = 1
 gifPath = 'C:\\Users\\bramb\\OneDrive\\Documents\\VSCode\\desktop pet blahaj\\gifs\\'
 lastSleep = 0 
 sleepLength = 0  
-screenWidth, screenHeight = 1520, 800  
+screenWidth, screenHeight = 1520, 800  # Hard coded since the regular screen doesn't work 
 lastDirection = "right" # Direction blahaj was facing
 swimTime = 0 
 animationLocked = False
@@ -21,12 +22,16 @@ idlePhase = 0
 lastIdle = "idle"
 dragX = dragY = 0
 isDragging = False 
+eventNum = 1
+eventQueue = deque() 
+hoverStartTime = None 
+lastPetTime = 0 
 
 # Window config
 window = tk.Tk()
 window.title("Desktop Pet")
 window.geometry(f"{screenWidth}x{screenHeight}+0+0")
-window.overrideredirect(True)  # No toolbar
+window.overrideredirect(True)  
 window.attributes('-topmost', True) 
 window.config(bg='black')
 window.wm_attributes('-transparentcolor', 'black') 
@@ -41,7 +46,7 @@ def close_program(event=None):
     window.destroy()
 window.bind("<Control-q>", close_program)
 
-# Drag pet with mouse
+# Pet interactions
 def dragStart(event):
     global dragX, dragY, isDragging
     dragX = event.x
@@ -60,12 +65,30 @@ def dragEnd(event):
     global isDragging
     isDragging = False 
 
+def hoverStart(event):
+    global hoverStartTime
+    hoverStartTime = time.time()
+
+def hoverEnd(event):
+    global hoverStartTime
+    hoverStartTime = None
+
+def hover():
+    global hoverStartTime, lastPetTime, animationLocked, frames, state
+    if hoverStartTime and (state in [0, 4, 5]  ) and (time.time() - hoverStartTime) >= 2 and (time.time() - lastPetTime) >= 20:
+        lastPetTime = time.time()
+        animationLocked = True
+        state = 6
+        hoverStartTime = None  
+    window.after(100, hover)
+
+label.bind("<Enter>", hoverStart)
+label.bind("<Leave>", hoverEnd)
 label.bind("<Button-1>", dragStart)   
 label.bind("<B1-Motion>", drag)  
 label.bind("<ButtonRelease-1>", dragEnd)
 
-
-# Load and gifs
+# Load gifs
 def loadGif(file_path):
     imagePil = Image.open(file_path)
     frames = []
@@ -76,6 +99,9 @@ def loadGif(file_path):
             imagePil.seek(len(frames))  # Move to the next frame
     except EOFError:
         pass 
+    except (FileNotFoundError, IOError):
+        print(f"Error! Couldn't load {file_path}")
+        return []
     return frames
 
 # Load animations as lists of frames
@@ -93,46 +119,43 @@ sleeping = loadGif(gifPath + 'sleeping.gif')
 to_awake = loadGif(gifPath + 'to_awake.gif')
 swim_right = loadGif(gifPath + 'swim_right.gif')
 swim_left = loadGif(gifPath + 'swim_left.gif')
+happy = loadGif(gifPath + 'happy.gif')
 
 currIdle = idles["idle_right"]
 frameIndex = 0  # Frame counter
 frames = []
 
-
 # Choose idle animation
 def setIdleAnim():
     global currIdle, lastDirection, lastIdle
+
+    thoughts = {
+        11: ("idle_plant", idles["idle_plant"]),
+        12: ("idle_music", idles["idle_music"]),
+        13: ("idle_candy", idles["idle_candy"]),
+        14: ("idle_fish", idles["idle_fish"])
+    }
+
     num = random.randint(1, 16)
-    if num == 11 and lastIdle != "idle_plant":
-        lastDirection = "right"
-        lastIdle = "idle_plant"
-        currIdle = idles["idle_plant"]
-    elif num == 12 and lastIdle != "idle_music":
-        lastDirection = "right"
-        lastIdle = "idle_music"
-        currIdle = idles["idle_music"]
-    elif num == 13 and lastIdle != "idle_candy":
-        lastDirection = "right"
-        lastIdle = "idle_candy"
-        currIdle = idles["idle_candy"]
-    elif num == 14 and lastIdle != "idle_fish":
-        lastDirection = "right"
-        lastIdle = "idle_fish"
-        currIdle = idles["idle_fish"]
+
+    if (num in [12, 14]) and lastIdle != thoughts[num][0]:
+        lastIdle, currIdle = thoughts[num]
+        lastDirection = "right"  
+
+    elif (num in [11, 13]) and lastIdle != thoughts[num][0]:
+        lastIdle, currIdle = thoughts[num]
+        lastDirection = "left"
 
     else:
-        if(lastDirection == "right"):
-            currIdle = idles["idle_right"]
-        elif(lastDirection == "left"):
-            currIdle = idles["idle_left"]
-    return currIdle 
+        currIdle = idles[f"idle_{lastDirection}"]
 
-# Updates the animation and position of the pet
+    return currIdle
+
+# Updates the animation and pet position
 def behavior():
-    global state, x, y, lastSleep, sleepLength, currIdle, lastDirection, frameIndex, currIdle, frames, swimTime, animationLocked, idlePhase, isDragging
+    global state, x, y, eventQueue, lastSleep, sleepLength, currIdle, lastDirection, frameIndex, currIdle, frames, swimTime, animationLocked, idlePhase, isDragging
     
     if not animationLocked: 
-        # currGifs based on the current state
         if state == 0:  # Idle
             frames = setIdleAnim()
 
@@ -150,6 +173,7 @@ def behavior():
 
         elif state == 3:  # Waking up
             frames = to_awake
+            eventQueue.append(1)
 
         elif state == 4:  # Swimming left
             lastDirection = "left"
@@ -159,7 +183,15 @@ def behavior():
             lastDirection = "right"
             frames = swim_right
         
+        elif state == 6: # Happy
+            lastDirection = "right"
+            frames = happy 
+        
         animationLocked = True
+
+        if state == 6 and frameIndex == len(frames) - 1:
+            animationLocked = False 
+            state = 0    
     
     # Have movement during idle and swimming animations
     if state == 0:
@@ -198,20 +230,37 @@ def behavior():
     if frameIndex == len(frames) - 1:
         animationLocked = False
     
-    window.after(80, behavior) 
+    window.after(100, behavior) 
+
+# Queue for changes in behavior 
+def queueEvent(): 
+    global state, lastSleep, currIdle, swimTime, lastDirection, animationLocked, eventNum
+
+    if animationLocked:
+        window.after(800, queueEvent)
+        return
+
+    if eventQueue:
+        nextEvent = eventQueue.popleft()
+        event(nextEvent)
+    else:
+        eventNum = random.randint(1, 20)
+        eventQueue.append(eventNum)
+
+    window.after(500, queueEvent)
 
 # Behavior transitions
-def event():
-    global state, lastSleep, currIdle, swimTime, lastDirection, animationLocked
-    eventNum = random.randint(1, 20) 
+def event(queued):
+    global state, lastSleep, currIdle, swimTime, lastDirection, animationLocked, eventNum
 
+    eventNum = queued 
     # to sleep
     if eventNum in [12, 13] and (time.time() - lastSleep > 10) and state == 0: 
         swimTime = 0
         state = 1
 
     # swim left 
-    elif (eventNum in [9, 10, 17, 18, 19] and x >= 200) or x >= (screenWidth - 350): 
+    elif (eventNum in [10, 17, 18, 19, 20] and x >= 200) or x >= (screenWidth - 350): 
         if swimTime == 0:
             swimTime = time.time()
         lastDirection = "left"
@@ -225,7 +274,7 @@ def event():
         state = 5
     
     # idle animations
-    if eventNum <= 8:
+    if eventNum <= 9:
         swimTime = 0
         if state == 0: 
             setIdleAnim()
@@ -235,13 +284,6 @@ def event():
             elif(lastDirection == "left"):
                 currIdle = idles["idle_left"]
         state = 0
-        
-    # wake up
-    elif eventNum == 20 and state == 2:  
-        swimTime = 0
-        state = 3
-    
-    window.after(500, event)  
 
 # Return to idle after sleeping
 def wakeUp():
@@ -249,6 +291,7 @@ def wakeUp():
     state = 0    
 
 # Start the main animation and event loops
-window.after(80, behavior)
-window.after(500, event)
+window.after(100, behavior)
+window.after(100, hover)  
+window.after(500, queueEvent)
 window.mainloop()
