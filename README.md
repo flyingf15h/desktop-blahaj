@@ -6,4 +6,5 @@ not sure whether to add the gifs to the repo
 
 click and drag with mouse to move, screen 1920x1080 but the tkinter window is diff for some reason so its 1520, 800
 
+viiew demo here (too large to attach file):
 https://youtu.be/K0QiKg8L7Tw
