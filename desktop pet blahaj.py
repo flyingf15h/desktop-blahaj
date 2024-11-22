@@ -5,13 +5,18 @@ import time
 import math
 from PIL import Image, ImageTk
 from collections import deque
+from pathlib import Path
 
 print("blohai :3")
 
 x = random.randint(200, 1300)
 y = random.randint(100, 500)  
 state = 1
-gifPath = 'C:\\Users\\bramb\\OneDrive\\Documents\\VSCode\\desktop pet blahaj\\gifs\\'
+
+gifdir = Path(__file__).parent
+gifPath = gifdir / 'gifs'
+
+# gifPath = 'C:\\Users\\bramb\\OneDrive\\Documents\\VSCode\\desktop pet blahaj\\gifs\\'
 lastSleep = 0 
 sleepLength = 0  
 screenWidth, screenHeight = 1520, 800  # Hard coded since the regular screen doesn't work 
@@ -106,20 +111,20 @@ def loadGif(file_path):
 
 # Load animations as lists of frames
 idles = {
-    "idle_right": loadGif(gifPath + 'idle.gif'),
-    "idle_left": loadGif(gifPath + 'idleLeft.gif'), 
-    "idle_plant": loadGif(gifPath + 'idle_plant.gif'),
-    "idle_music": loadGif(gifPath + 'idle_music.gif'),
-    "idle_candy": loadGif(gifPath + 'idle_candy.gif'),
-    "idle_fish": loadGif(gifPath + 'idle_fish.gif')
+    "idle_right": loadGif(str(gifPath / 'idle.gif')),
+    "idle_left": loadGif(str(gifPath / 'idleLeft.gif')),
+    "idle_plant": loadGif(str(gifPath / 'idle_plant.gif')),
+    "idle_music": loadGif(str(gifPath / 'idle_music.gif')),
+    "idle_candy": loadGif(str(gifPath / 'idle_candy.gif')),
+    "idle_fish": loadGif(str(gifPath / 'idle_fish.gif'))
 }
 
-to_sleep = loadGif(gifPath + 'to_sleep.gif')
-sleeping = loadGif(gifPath + 'sleeping.gif')
-to_awake = loadGif(gifPath + 'to_awake.gif')
-swim_right = loadGif(gifPath + 'swim_right.gif')
-swim_left = loadGif(gifPath + 'swim_left.gif')
-happy = loadGif(gifPath + 'happy.gif')
+to_sleep = loadGif(str(gifPath / 'to_sleep.gif'))
+sleeping = loadGif(str(gifPath / 'sleeping.gif'))
+to_awake = loadGif(str(gifPath / 'to_awake.gif'))
+swim_right = loadGif(str(gifPath / 'swim_right.gif'))
+swim_left = loadGif(str(gifPath / 'swim_left.gif'))
+happy = loadGif(str(gifPath / 'happy.gif'))
 
 currIdle = idles["idle_right"]
 frameIndex = 0  # Frame counter
